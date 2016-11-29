@@ -27,6 +27,7 @@ int main(){
 	run_gpu_gray_test(img_ibuf_g);
 	free_pgm(img_ibuf_g);
 	
+	printf("\n\n");
 	printf("Running contrast enhancement for color images.\n");
 	img_ibuf_c = read_ppm("in.ppm");
 	run_cpu_color_test(img_ibuf_c);
