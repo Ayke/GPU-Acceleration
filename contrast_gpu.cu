@@ -4,7 +4,7 @@
 #include "hist-equ.h"
 
 
-__device__ unsigned char clip_rgb(int x)
+__device__ unsigned char clip_rgb_gpu(int x)
 {
 	if(x > 255)
 		return 255;
@@ -169,9 +169,9 @@ __global__ void yuv2rgb_gpu_son(unsigned char * d_y , unsigned char * d_u ,unsig
     gt  = (int)( y - 0.344*cb - 0.714*cr);
     bt  = (int)( y + 1.772*cb);
 
-    d_r[x] = clip_rgb(rt);
-    d_g[x] = clip_rgb(gt);
-    d_b[x] = clip_rgb(bt);
+    d_r[x] = clip_rgb_gpu(rt);
+    d_g[x] = clip_rgb_gpu(gt);
+    d_b[x] = clip_rgb_gpu(bt);
 }
 
 HSL_IMG rgb2hsl_gpu(PPM_IMG img_in)
@@ -248,7 +248,7 @@ __global__ void rgb2hsl_gpu_son( unsigned char * d_r, unsigned char * d_g, unsig
     {
         if ( L < 0.5 )
             S = del_max/(var_max+var_min);
-        else
+        else {
             S = del_max/(2-var_max-var_min );
 
             float del_r = (((var_max-var_r)/6)+(del_max/2))/del_max;
@@ -327,9 +327,9 @@ __global__ void rgb2yuv_gpu_son(unsigned char * d_r, unsigned char * d_g, unsign
     g = d_g[x];
     b = d_b[x];
     
-    d_y[i] = (unsigned char)( 0.299*r + 0.587*g +  0.114*b);
-    d_u[i] = (unsigned char)(-0.169*r - 0.331*g +  0.499*b + 128);
-    d_v[i] = (unsigned char)( 0.499*r - 0.418*g - 0.0813*b + 128);
+    d_y[x] = (unsigned char)( 0.299*r + 0.587*g +  0.114*b);
+    d_u[x] = (unsigned char)(-0.169*r - 0.331*g +  0.499*b + 128);
+    d_v[x] = (unsigned char)( 0.499*r - 0.418*g - 0.0813*b + 128);
 }
 
 
@@ -337,7 +337,7 @@ __global__ void rgb2yuv_gpu_son(unsigned char * d_r, unsigned char * d_g, unsign
 
 
 
-PGM_IMG contrast_enhancement_g(PGM_IMG img_in)
+PGM_IMG contrast_enhancement_g_gpu(PGM_IMG img_in)
 {
     PGM_IMG result;
     int hist[256];
@@ -346,12 +346,12 @@ PGM_IMG contrast_enhancement_g(PGM_IMG img_in)
     result.h = img_in.h;
     result.img = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
     
-    histogram(hist, img_in.img, img_in.h * img_in.w, 256);
-    histogram_equalization(result.img,img_in.img,hist,result.w*result.h, 256);
+    histogram_gpu(hist, img_in.img, img_in.h * img_in.w, 256);
+    histogram_equalization_gpu(result.img, img_in.img, hist, result.w*result.h, 256);
     return result;
 }
 
-PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in)
+PPM_IMG contrast_enhancement_c_yuv_gpu(PPM_IMG img_in)
 {
     YUV_IMG yuv_med;
     PPM_IMG result;
@@ -362,8 +362,8 @@ PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in)
     yuv_med = rgb2yuv(img_in);
     y_equ = (unsigned char *)malloc(yuv_med.h*yuv_med.w*sizeof(unsigned char));
     
-    histogram(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256);
-    histogram_equalization(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w, 256);
+    histogram_gpu(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256);
+    histogram_equalization_gpu(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w, 256);
 
     free(yuv_med.img_y);
     yuv_med.img_y = y_equ;
@@ -376,7 +376,7 @@ PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in)
     return result;
 }
 
-PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in)
+PPM_IMG contrast_enhancement_c_hsl_gpu(PPM_IMG img_in)
 {
     HSL_IMG hsl_med;
     PPM_IMG result;
@@ -387,8 +387,8 @@ PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in)
     hsl_med = rgb2hsl(img_in);
     l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
 
-    histogram(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256);
-    histogram_equalization(l_equ, hsl_med.l,hist,hsl_med.width*hsl_med.height, 256);
+    histogram_gpu(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256);
+    histogram_equalization_gpu(l_equ, hsl_med.l,hist,hsl_med.width*hsl_med.height, 256);
     
     free(hsl_med.l);
     hsl_med.l = l_equ;
