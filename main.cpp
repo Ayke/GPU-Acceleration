@@ -18,10 +18,8 @@ void run_gpu_gray_test(PGM_IMG img_in);
 
 
 int main(){
-
-    int * init;
-    cudaMalloc(&init, 0);
-    
+	int * init;
+	cudaMalloc(&init,0);
 	PGM_IMG img_ibuf_g;
 	PPM_IMG img_ibuf_c;
 	

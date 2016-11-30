@@ -359,7 +359,7 @@ PPM_IMG contrast_enhancement_c_yuv_gpu(PPM_IMG img_in)
     y_equ = (unsigned char *)malloc(yuv_med.h*yuv_med.w*sizeof(unsigned char));
     
     histogram_gpu(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256);
-    histogram_equalization_gpu(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w * sizeof(unsigned char), 256);
+    histogram_equalization_gpu(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w, 256);
 
     free(yuv_med.img_y);
     yuv_med.img_y = y_equ;
