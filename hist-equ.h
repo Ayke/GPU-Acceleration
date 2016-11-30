@@ -6,6 +6,7 @@
 #include <helper_functions.h>
 #include <helper_timer.h>
 #define NUM_THREAD 1024
+//Must be even
 
 typedef struct{
     int w;
@@ -80,6 +81,7 @@ void histogram_gpu(int * hist_out, unsigned char * img_in, int img_size, int nbr
 __global__ void histogram_gpu_son(unsigned char * d_img, unsigned int * d_hist,  int img_size,  int nbr_bin);
 void histogram_equalization_gpu(unsigned char * img_out, unsigned char * img_in, int * hist_in, int img_size, int nbr_bin);
 __global__ void histogram_equalization_gpu_son (unsigned char * d_in, unsigned char * d_out, int * d_lut, int img_size,  int nbr_bin);
+__global__ void clean(unsigned int * e, int n);
 //Contrast enhancement for gray-scale images
 //Contrast enhancement for color images
 PGM_IMG contrast_enhancement_g(PGM_IMG img_in);
