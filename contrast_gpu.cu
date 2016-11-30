@@ -6,57 +6,57 @@
 
 __device__ unsigned char clip_rgb_gpu(int x)
 {
-	if(x > 255)
-		return 255;
-	if(x < 0)
-		return 0;
+    if(x > 255)
+        return 255;
+    if(x < 0)
+        return 0;
 
-	return (unsigned char)x;
+    return (unsigned char)x;
 }
 
 __device__ float Hue_2_RGB_gpu( float v1, float v2, float vH )             //Function Hue_2_RGB
 {
-	if ( vH < 0 ) vH += 1;
-	if ( vH > 1 ) vH -= 1;
-	if ( ( 6 * vH ) < 1 ) return ( v1 + ( v2 - v1 ) * 6 * vH );
-	if ( ( 2 * vH ) < 1 ) return ( v2 );
-	if ( ( 3 * vH ) < 2 ) return ( v1 + ( v2 - v1 ) * ( ( 2.0f/3.0f ) - vH ) * 6 );
-	return ( v1 );
+    if ( vH < 0 ) vH += 1;
+    if ( vH > 1 ) vH -= 1;
+    if ( ( 6 * vH ) < 1 ) return ( v1 + ( v2 - v1 ) * 6 * vH );
+    if ( ( 2 * vH ) < 1 ) return ( v2 );
+    if ( ( 3 * vH ) < 2 ) return ( v1 + ( v2 - v1 ) * ( ( 2.0f/3.0f ) - vH ) * 6 );
+    return ( v1 );
 }
 
 PPM_IMG hsl2rgb_gpu(HSL_IMG img_in)
 {
-	PPM_IMG result;
-	
-	result.w = img_in.width;
-	result.h = img_in.height;
-	result.img_r = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
-	result.img_g = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
-	result.img_b = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
-	
-	float * d_h;
-	float * d_s;
-	unsigned char * d_l;
+    PPM_IMG result;
+    
+    result.w = img_in.width;
+    result.h = img_in.height;
+    result.img_r = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
+    result.img_g = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
+    result.img_b = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
+    
+    float * d_h;
+    float * d_s;
+    unsigned char * d_l;
 
-	unsigned char * d_r;
-	unsigned char * d_g;
-	unsigned char * d_b;
+    unsigned char * d_r;
+    unsigned char * d_g;
+    unsigned char * d_b;
 
-	cudaMalloc(&d_h, result.w * result.h * sizeof(float));
-	cudaMalloc(&d_s, result.w * result.h * sizeof(float));
-	cudaMalloc(&d_l, result.w * result.h * sizeof(unsigned char));
-	cudaMalloc(&d_r, result.w * result.h * sizeof(unsigned char));
-	cudaMalloc(&d_g, result.w * result.h * sizeof(unsigned char));
-	cudaMalloc(&d_b, result.w * result.h * sizeof(unsigned char));
+    cudaMalloc(&d_h, result.w * result.h * sizeof(float));
+    cudaMalloc(&d_s, result.w * result.h * sizeof(float));
+    cudaMalloc(&d_l, result.w * result.h * sizeof(unsigned char));
+    cudaMalloc(&d_r, result.w * result.h * sizeof(unsigned char));
+    cudaMalloc(&d_g, result.w * result.h * sizeof(unsigned char));
+    cudaMalloc(&d_b, result.w * result.h * sizeof(unsigned char));
 
-	cudaMemcpy(d_h, img_in.h, sizeof(float)         * result.w * result.h, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_s, img_in.s, sizeof(float)         * result.w * result.h, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_l, img_in.l, sizeof(unsigned char) * result.w * result.h, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_h, img_in.h, sizeof(float)         * result.w * result.h, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_s, img_in.s, sizeof(float)         * result.w * result.h, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_l, img_in.l, sizeof(unsigned char) * result.w * result.h, cudaMemcpyHostToDevice);
 
-	int numThreads = NUM_THREAD;	
-	int numBlocks = (result.w * result.h)/numThreads + 1;
+    int numThreads = NUM_THREAD;    
+    int numBlocks = (result.w * result.h)/numThreads + 1;
 
-	hsl2rgb_gpu_son<<<numBlocks,numThreads>>>(d_h, d_s, d_l, d_r, d_g, d_b, result.w*result.h, numBlocks*numThreads);
+    hsl2rgb_gpu_son<<<numBlocks,numThreads>>>(d_h, d_s, d_l, d_r, d_g, d_b, result.w*result.h, numBlocks*numThreads);
 
     cudaMemcpy(result.img_r, d_r, sizeof(unsigned char)*result.w*result.h, cudaMemcpyDeviceToHost);
     cudaMemcpy(result.img_g, d_g, sizeof(unsigned char)*result.w*result.h, cudaMemcpyDeviceToHost);
@@ -71,15 +71,15 @@ PPM_IMG hsl2rgb_gpu(HSL_IMG img_in)
 }
 
 __global__ void hsl2rgb_gpu_son(float * d_h , float * d_s ,unsigned char * d_l , 
-	unsigned char * d_r, unsigned char * d_g, unsigned char * d_b, 
-	int size, int numOfThreads) 
+    unsigned char * d_r, unsigned char * d_g, unsigned char * d_b, 
+    int size, int numOfThreads) 
 {
-	int x = threadIdx.x + blockDim.x*blockIdx.x;
+    int x = threadIdx.x + blockDim.x*blockIdx.x;
     if (x >= size) return;
     float H = d_h[x];
     float S = d_s[x];
     float L = d_l[x]/255.0f;
-	float var_1, var_2;
+    float var_1, var_2;
     unsigned char r,g,b;
         
     if ( S == 0 )
@@ -108,37 +108,37 @@ __global__ void hsl2rgb_gpu_son(float * d_h , float * d_s ,unsigned char * d_l ,
 
 PPM_IMG yuv2rgb_gpu(YUV_IMG img_in)
 {
-	PPM_IMG result;
-	
-	result.w = img_in.w;
-	result.h = img_in.h;
-	result.img_r = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
-	result.img_g = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
-	result.img_b = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
-	
+    PPM_IMG result;
+    
+    result.w = img_in.w;
+    result.h = img_in.h;
+    result.img_r = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
+    result.img_g = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
+    result.img_b = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
+    
     unsigned char * d_y;
     unsigned char * d_u;
     unsigned char * d_v;
 
-	unsigned char * d_r;
-	unsigned char * d_g;
-	unsigned char * d_b;
+    unsigned char * d_r;
+    unsigned char * d_g;
+    unsigned char * d_b;
 
-	cudaMalloc(&d_y, result.w * result.h * sizeof(unsigned char));
+    cudaMalloc(&d_y, result.w * result.h * sizeof(unsigned char));
     cudaMalloc(&d_u, result.w * result.h * sizeof(unsigned char));
     cudaMalloc(&d_v, result.w * result.h * sizeof(unsigned char));
-	cudaMalloc(&d_r, result.w * result.h * sizeof(unsigned char));
-	cudaMalloc(&d_g, result.w * result.h * sizeof(unsigned char));
-	cudaMalloc(&d_b, result.w * result.h * sizeof(unsigned char));
+    cudaMalloc(&d_r, result.w * result.h * sizeof(unsigned char));
+    cudaMalloc(&d_g, result.w * result.h * sizeof(unsigned char));
+    cudaMalloc(&d_b, result.w * result.h * sizeof(unsigned char));
 
-	cudaMemcpy(d_y, img_in.img_y, sizeof(unsigned char) * result.w * result.h, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_u, img_in.img_u, sizeof(unsigned char) * result.w * result.h, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_v, img_in.img_v, sizeof(unsigned char) * result.w * result.h, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_y, img_in.img_y, sizeof(unsigned char) * result.w * result.h, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_u, img_in.img_u, sizeof(unsigned char) * result.w * result.h, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_v, img_in.img_v, sizeof(unsigned char) * result.w * result.h, cudaMemcpyHostToDevice);
 
-	int numThreads = NUM_THREAD;	
-	int numBlocks = (result.w * result.h)/numThreads  + 1;
+    int numThreads = NUM_THREAD;    
+    int numBlocks = (result.w * result.h)/numThreads  + 1;
 
-	yuv2rgb_gpu_son<<<numBlocks,numThreads>>>(d_y, d_u, d_v, d_r, d_g, d_b, result.w*result.h, numBlocks*numThreads);
+    yuv2rgb_gpu_son<<<numBlocks,numThreads>>>(d_y, d_u, d_v, d_r, d_g, d_b, result.w*result.h, numBlocks*numThreads);
 
     cudaMemcpy(result.img_r, d_r, sizeof(unsigned char)*result.w*result.h, cudaMemcpyDeviceToHost);
     cudaMemcpy(result.img_g, d_g, sizeof(unsigned char)*result.w*result.h, cudaMemcpyDeviceToHost);
@@ -153,11 +153,11 @@ PPM_IMG yuv2rgb_gpu(YUV_IMG img_in)
 }
 
 __global__ void yuv2rgb_gpu_son(unsigned char * d_y , unsigned char * d_u ,unsigned char * d_v , 
-	unsigned char * d_r, unsigned char * d_g, unsigned char * d_b, 
-	int size, int numOfThreads) 
+    unsigned char * d_r, unsigned char * d_g, unsigned char * d_b, 
+    int size, int numOfThreads) 
 {
-	int x = threadIdx.x + blockDim.x*blockIdx.x;
-	if (x >= size) return;
+    int x = threadIdx.x + blockDim.x*blockIdx.x;
+    if (x >= size) return;
     int rt,gt,bt;
     int y, cb, cr;
     
@@ -176,38 +176,38 @@ __global__ void yuv2rgb_gpu_son(unsigned char * d_y , unsigned char * d_u ,unsig
 
 HSL_IMG rgb2hsl_gpu(PPM_IMG img_in)
 {
-	HSL_IMG result;
-	
-	result.width   = img_in.w;
-	result.height  = img_in.h;
-	result.h = (float *)           malloc(img_in.w * img_in.h * sizeof(float));
-	result.s = (float *)           malloc(img_in.w * img_in.h * sizeof(float));
-	result.l = (unsigned char *)   malloc(img_in.w * img_in.h * sizeof(unsigned char));
-	
+    HSL_IMG result;
+    
+    result.width   = img_in.w;
+    result.height  = img_in.h;
+    result.h = (float *)           malloc(img_in.w * img_in.h * sizeof(float));
+    result.s = (float *)           malloc(img_in.w * img_in.h * sizeof(float));
+    result.l = (unsigned char *)   malloc(img_in.w * img_in.h * sizeof(unsigned char));
+    
     unsigned char * d_r;
     unsigned char * d_g;
     unsigned char * d_b;
 
-	float * d_h;
-	float * d_s;
-	unsigned char * d_l;
-	
+    float * d_h;
+    float * d_s;
+    unsigned char * d_l;
+    
 
-	cudaMalloc(&d_r, img_in.w * img_in.h * sizeof(unsigned char));
-	cudaMalloc(&d_g, img_in.w * img_in.h * sizeof(unsigned char));
-	cudaMalloc(&d_b, img_in.w * img_in.h * sizeof(unsigned char));
+    cudaMalloc(&d_r, img_in.w * img_in.h * sizeof(unsigned char));
+    cudaMalloc(&d_g, img_in.w * img_in.h * sizeof(unsigned char));
+    cudaMalloc(&d_b, img_in.w * img_in.h * sizeof(unsigned char));
     cudaMalloc(&d_h, img_in.w * img_in.h * sizeof(float));
     cudaMalloc(&d_s, img_in.w * img_in.h * sizeof(float));
     cudaMalloc(&d_l, img_in.w * img_in.h * sizeof(unsigned char));
     
-	cudaMemcpy(d_r, img_in.img_r, sizeof(unsigned char) * img_in.w * img_in.h, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_g, img_in.img_g, sizeof(unsigned char) * img_in.w * img_in.h, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_b, img_in.img_b, sizeof(unsigned char) * img_in.w * img_in.h, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_r, img_in.img_r, sizeof(unsigned char) * img_in.w * img_in.h, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_g, img_in.img_g, sizeof(unsigned char) * img_in.w * img_in.h, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, img_in.img_b, sizeof(unsigned char) * img_in.w * img_in.h, cudaMemcpyHostToDevice);
 
-	int numThreads = NUM_THREAD;	
-	int numBlocks = (img_in.w * img_in.h)/numThreads + 1;
+    int numThreads = NUM_THREAD;    
+    int numBlocks = (img_in.w * img_in.h)/numThreads + 1;
 
-	rgb2hsl_gpu_son<<<numBlocks,numThreads>>>(d_r, d_g, d_b, d_h, d_s, d_l, img_in.w*img_in.h, numBlocks*numThreads);
+    rgb2hsl_gpu_son<<<numBlocks,numThreads>>>(d_r, d_g, d_b, d_h, d_s, d_l, img_in.w*img_in.h, numBlocks*numThreads);
 
     cudaMemcpy(result.h, d_h, sizeof(float) * img_in.w * img_in.h, cudaMemcpyDeviceToHost);
     cudaMemcpy(result.s, d_s, sizeof(float) * img_in.w * img_in.h, cudaMemcpyDeviceToHost);
@@ -222,11 +222,11 @@ HSL_IMG rgb2hsl_gpu(PPM_IMG img_in)
 }
 
 __global__ void rgb2hsl_gpu_son( unsigned char * d_r, unsigned char * d_g, unsigned char * d_b,
-	float * d_h , float * d_s , unsigned char * d_l , 
-	int size, int numOfThreads) 
+    float * d_h , float * d_s , unsigned char * d_l , 
+    int size, int numOfThreads) 
 {
-	int x = threadIdx.x + blockDim.x*blockIdx.x;
-	if (x >= size) return;
+    int x = threadIdx.x + blockDim.x*blockIdx.x;
+    if (x >= size) return;
 
     float H,S,L;
     float var_r = ( (float)d_r[x]/255 );//Convert RGB to [0,1]
@@ -333,10 +333,6 @@ __global__ void rgb2yuv_gpu_son(unsigned char * d_r, unsigned char * d_g, unsign
 }
 
 
-
-
-
-
 PGM_IMG contrast_enhancement_g_gpu(PGM_IMG img_in)
 {
     PGM_IMG result;
@@ -358,17 +354,17 @@ PPM_IMG contrast_enhancement_c_yuv_gpu(PPM_IMG img_in)
     
     unsigned char * y_equ;
     int hist[256];
-    
-    yuv_med = rgb2yuv(img_in);
+
+    yuv_med = rgb2yuv_gpu(img_in);
     y_equ = (unsigned char *)malloc(yuv_med.h*yuv_med.w*sizeof(unsigned char));
     
     histogram_gpu(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256);
-    histogram_equalization_gpu(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w, 256);
+    histogram_equalization_gpu(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w * sizeof(unsigned char), 256);
 
     free(yuv_med.img_y);
     yuv_med.img_y = y_equ;
     
-    result = yuv2rgb(yuv_med);
+    result = yuv2rgb_gpu(yuv_med);
     free(yuv_med.img_y);
     free(yuv_med.img_u);
     free(yuv_med.img_v);
@@ -384,7 +380,7 @@ PPM_IMG contrast_enhancement_c_hsl_gpu(PPM_IMG img_in)
     unsigned char * l_equ;
     int hist[256];
 
-    hsl_med = rgb2hsl(img_in);
+    hsl_med = rgb2hsl_gpu(img_in);
     l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
 
     histogram_gpu(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256);
@@ -393,7 +389,7 @@ PPM_IMG contrast_enhancement_c_hsl_gpu(PPM_IMG img_in)
     free(hsl_med.l);
     hsl_med.l = l_equ;
 
-    result = hsl2rgb(hsl_med);
+    result = hsl2rgb_gpu(hsl_med);
     free(hsl_med.h);
     free(hsl_med.s);
     free(hsl_med.l);

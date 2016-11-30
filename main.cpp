@@ -18,6 +18,10 @@ void run_gpu_gray_test(PGM_IMG img_in);
 
 
 int main(){
+
+    int * init;
+    cudaMalloc(&init, 0);
+    
 	PGM_IMG img_ibuf_g;
 	PPM_IMG img_ibuf_c;
 	
@@ -63,8 +67,6 @@ void run_gpu_color_test(PPM_IMG img_in)
 	
 	free_ppm(img_obuf_hsl);
 	free_ppm(img_obuf_yuv);
-
-	img_in = img_in; // To avoid warning...
 }
 
 void run_gpu_gray_test(PGM_IMG img_in)
@@ -84,8 +86,6 @@ void run_gpu_gray_test(PGM_IMG img_in)
 	
 	write_pgm(img_obuf, "out_gpu.pgm");
 	free_pgm(img_obuf);
-
-	img_in = img_in; // To avoid warning...
 }
 
 void run_cpu_color_test(PPM_IMG img_in)
