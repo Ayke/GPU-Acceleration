@@ -71,7 +71,7 @@ void histogram_equalization_gpu(unsigned char * img_out, unsigned char * img_in,
     /* Get the result image */
     int numThreads = NUM_THREAD;    
     // int numBlocks = (img_size/numThreads) + 1;
-    int numBlocks = (img_size / numThreads)/3 + 1;
+    int numBlocks = (img_size / numThreads) + 1;
     histogram_equalization_gpu_son<<<numBlocks, numThreads>>>(d_in, d_out, d_lut, img_size, (img_size / (numThreads * numBlocks)) + 1);
     cudaMemcpy(img_out, d_out, img_size * sizeof(unsigned char), cudaMemcpyDeviceToHost);
     cudaFree(d_in);
