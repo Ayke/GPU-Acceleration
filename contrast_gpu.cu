@@ -56,7 +56,7 @@ PPM_IMG hsl2rgb_gpu(HSL_IMG img_in)
     int numThreads = NUM_THREAD;    
     int numBlocks = (result.w * result.h)/numThreads + 1;
 
-    hsl2rgb_gpu_son<<<numBlocks,numThreads>>>(d_h, d_s, d_l, d_r, d_g, d_b, result.w*result.h, numBlocks*numThreads);
+    hsl2rgb_gpu_son<<<numBlocks,numThreads>>>(d_h, d_s, d_l, d_r, d_g, d_b, result.w*result.h);
 
     cudaMemcpy(result.img_r, d_r, sizeof(unsigned char)*result.w*result.h, cudaMemcpyDeviceToHost);
     cudaMemcpy(result.img_g, d_g, sizeof(unsigned char)*result.w*result.h, cudaMemcpyDeviceToHost);
@@ -72,7 +72,7 @@ PPM_IMG hsl2rgb_gpu(HSL_IMG img_in)
 
 __global__ void hsl2rgb_gpu_son(float * d_h , float * d_s ,unsigned char * d_l , 
     unsigned char * d_r, unsigned char * d_g, unsigned char * d_b, 
-    int size, int numOfThreads) 
+    int size) 
 {
     int x = threadIdx.x + blockDim.x*blockIdx.x;
     if (x >= size) return;
@@ -138,7 +138,7 @@ PPM_IMG yuv2rgb_gpu(YUV_IMG img_in)
     int numThreads = NUM_THREAD;    
     int numBlocks = (result.w * result.h)/numThreads  + 1;
 
-    yuv2rgb_gpu_son<<<numBlocks,numThreads>>>(d_y, d_u, d_v, d_r, d_g, d_b, result.w*result.h, numBlocks*numThreads);
+    yuv2rgb_gpu_son<<<numBlocks,numThreads>>>(d_y, d_u, d_v, d_r, d_g, d_b, result.w*result.h);
 
     cudaMemcpy(result.img_r, d_r, sizeof(unsigned char)*result.w*result.h, cudaMemcpyDeviceToHost);
     cudaMemcpy(result.img_g, d_g, sizeof(unsigned char)*result.w*result.h, cudaMemcpyDeviceToHost);
@@ -154,7 +154,7 @@ PPM_IMG yuv2rgb_gpu(YUV_IMG img_in)
 
 __global__ void yuv2rgb_gpu_son(unsigned char * d_y , unsigned char * d_u ,unsigned char * d_v , 
     unsigned char * d_r, unsigned char * d_g, unsigned char * d_b, 
-    int size, int numOfThreads) 
+    int size) 
 {
     int x = threadIdx.x + blockDim.x*blockIdx.x;
     if (x >= size) return;
@@ -207,7 +207,7 @@ HSL_IMG rgb2hsl_gpu(PPM_IMG img_in)
     int numThreads = NUM_THREAD;    
     int numBlocks = (img_in.w * img_in.h)/numThreads + 1;
 
-    rgb2hsl_gpu_son<<<numBlocks,numThreads>>>(d_r, d_g, d_b, d_h, d_s, d_l, img_in.w*img_in.h, numBlocks*numThreads);
+    rgb2hsl_gpu_son<<<numBlocks,numThreads>>>(d_r, d_g, d_b, d_h, d_s, d_l, img_in.w*img_in.h);
 
     cudaMemcpy(result.h, d_h, sizeof(float) * img_in.w * img_in.h, cudaMemcpyDeviceToHost);
     cudaMemcpy(result.s, d_s, sizeof(float) * img_in.w * img_in.h, cudaMemcpyDeviceToHost);
@@ -223,7 +223,7 @@ HSL_IMG rgb2hsl_gpu(PPM_IMG img_in)
 
 __global__ void rgb2hsl_gpu_son( unsigned char * d_r, unsigned char * d_g, unsigned char * d_b,
     float * d_h , float * d_s , unsigned char * d_l , 
-    int size, int numOfThreads) 
+    int size) 
 {
     int x = threadIdx.x + blockDim.x*blockIdx.x;
     if (x >= size) return;
@@ -301,7 +301,7 @@ YUV_IMG rgb2yuv_gpu(PPM_IMG img_in)
     int numThreads = NUM_THREAD;    
     int numBlocks = (result.w * result.h)/numThreads + 1;
 
-    rgb2yuv_gpu_son<<<numBlocks,numThreads>>>(d_r, d_g, d_b, d_y, d_u, d_v, result.w*result.h, numBlocks*numThreads);
+    rgb2yuv_gpu_son<<<numBlocks,numThreads>>>(d_r, d_g, d_b, d_y, d_u, d_v, result.w*result.h);
 
     cudaMemcpy(result.img_y, d_y, sizeof(unsigned char) * result.w * result.h, cudaMemcpyDeviceToHost);
     cudaMemcpy(result.img_u, d_u, sizeof(unsigned char) * result.w * result.h, cudaMemcpyDeviceToHost);
@@ -317,7 +317,7 @@ YUV_IMG rgb2yuv_gpu(PPM_IMG img_in)
 
 __global__ void rgb2yuv_gpu_son(unsigned char * d_r, unsigned char * d_g, unsigned char * d_b, 
     unsigned char * d_y , unsigned char * d_u ,unsigned char * d_v , 
-    int size, int numOfThreads) 
+    int size) 
 {
     int x = threadIdx.x + blockDim.x*blockIdx.x;
     if (x >= size) return;
