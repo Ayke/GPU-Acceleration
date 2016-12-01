@@ -12,49 +12,50 @@ __global__ void clean(unsigned int * e, int n)
 void histogram_gpu(int * hist_out, unsigned char * img_in, int img_size, int nbr_bin)
 {
 //Uncomment following lines to unlock a CPU version histogram
-    int i;    
-    for ( i = 0; i < nbr_bin; i++) hist_out[i] = 0;
-    for ( i = 0; i < img_size; i++) hist_out[img_in[i]] ++;
+    // int i;    
+    // for ( i = 0; i < nbr_bin; i++) hist_out[i] = 0;
+    // for ( i = 0; i < img_size; i++) hist_out[img_in[i]] ++;
 
 //Uncomment following lines to unlock a GPU version histogram
-    // unsigned char * d_img;
-    // unsigned int * d_hist;
-    // cudaMalloc(&d_img,  img_size * sizeof(unsigned char));
-    // cudaMalloc(&d_hist, nbr_bin * sizeof(unsigned int));
-    // clean<<<1,nbr_bin>>>(d_hist, nbr_bin);
-    // cudaMemcpy(d_img, img_in, sizeof(unsigned char)*img_size, cudaMemcpyHostToDevice);
+    unsigned char * d_img;
+    unsigned int * d_hist;
+    cudaMalloc(&d_img,  img_size * sizeof(unsigned char));
+    cudaMalloc(&d_hist, nbr_bin * sizeof(unsigned int));
+    clean<<<1,nbr_bin>>>(d_hist, nbr_bin);
+    cudaMemcpy(d_img, img_in, sizeof(unsigned char)*img_size, cudaMemcpyHostToDevice);
 
 
-    // int numThreads = 256;    
-    // int serialNum = 1024;
-    // int numBlocks = (img_size / (numThreads*serialNum)) + 1;
-    // histogram_gpu_son<<<numBlocks, numThreads, ROLLSIZE*256*sizeof(unsigned int)>>>(d_img, d_hist, img_size, serialNum);
+    int numThreads = 256;    
+    int serialNum = 1024;
+    int numBlocks = (img_size / (numThreads*serialNum)) + 1;
+    histogram_gpu_son<<<numBlocks, numThreads, ROLLSIZE*256*sizeof(unsigned int)>>>(d_img, d_hist, img_size, serialNum);
 
-    // cudaMemcpy(hist_out, d_hist, sizeof(int)*nbr_bin, cudaMemcpyDeviceToHost);
-    // cudaFree(d_hist);
-    // cudaFree(d_img);
+    cudaMemcpy(hist_out, d_hist, sizeof(int)*nbr_bin, cudaMemcpyDeviceToHost);
+    cudaFree(d_hist);
+    cudaFree(d_img);
     return;
 }
 
 __global__ void histogram_gpu_son(unsigned char * d_img, unsigned int * d_hist,  int img_size,  int serialNum)
 {
-    __shared__ unsigned int aa[ROLLSIZE][256];
+    // __shared__ unsigned int aa[ROLLSIZE][256];
+    extern __shared__ unsigned int aa[];
     int x = threadIdx.x + blockDim.x*blockIdx.x;
     int i;
 
-    for(i = 0; i < ROLLSIZE; i++) aa[i][threadIdx.x] = 0;
+    for(i = 0; i < ROLLSIZE; i++) aa[(i << 8) + threadIdx.x] = 0;
     __syncthreads();
 
     int end = (x+1)*serialNum;
     if (end >= img_size) end = img_size;
     
-    for(i = x*serialNum; i < end; i++) atomicAdd(&(aa[threadIdx.x >> 4][d_img[i]]), 1);
+    for(i = x*serialNum; i < end; i++) atomicAdd(&(aa[((threadIdx.x >> 4 ) << 8) +  d_img[i]]), 1);
     __syncthreads();
 
     unsigned int s;
     for(s = 16 / 2; s > 0; s >>= 1) {
         //Only when numThreads == 256
-        for(i = 0; i < s; i++) aa[i][threadIdx.x] += aa[i+s][threadIdx.x];
+        for(i = 0; i < s; i++) aa[(i << 8) + threadIdx.x] += aa[((i+s) << 8) + threadIdx.x];
 
 
         // if (threadIdx.x < s) {
@@ -65,7 +66,7 @@ __global__ void histogram_gpu_son(unsigned char * d_img, unsigned int * d_hist, 
         __syncthreads();
     }
 
-    atomicAdd(&(d_hist[threadIdx.x]),aa[0][threadIdx.x]);
+    atomicAdd(&(d_hist[threadIdx.x]),aa[threadIdx.x]);
     return;
 }
 
