@@ -15,3 +15,5 @@ make
 cp /home/XXXX/XXX.ppm in.ppm
 cp /home/XXXX/XXX.pgm in.pgm
 ./5kk70-assignment-gpu
+
+The input file should be a "ppm" or "pgm" file, and the name should be "in.ppm", "in.pgm"
