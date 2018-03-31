@@ -1,19 +1,26 @@
 # GPU-Acceleration
-A sample code of image processing (more specifically, histogram equalization) with GPU acceleration
+This project shows a sample code of processing images with GPU acceleration, more specifically, *histogram equlization*.
 
-## Before compile & run
-Please open "CMakeLists.txt", and check:
+## Before compile
+Set correct compile configruation
 
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3 -gencode arch=compute_35,code=sm_35)
-
-at the end of this line, I used "sm_35" because I'm using CSIL machine, and its graphics card is GT 720, "3.5" is my Compute Capability, please check your configuration and https://developer.nvidia.com/cuda-gpus to find the suitable compute capability.
+Edit `CMakeLists.txt`, and check this line `set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3 -gencode arch=compute_35,code=sm_35)`
+, the configuration `sm_35` matches graphics card **GT 720**. Please use this [link](https://developer.nvidia.com/cuda-gpus) to check and find a suitable compute capability configurations.
 
 ## Compile & run
+To compile, use the following script
+
+```sh
 mkdir build && cd build
 cmake ..
 make
-cp /home/XXXX/XXX.ppm in.ppm
-cp /home/XXXX/XXX.pgm in.pgm
-./5kk70-assignment-gpu
+```
 
-The input file should be a "ppm" or "pgm" file, and the name should be "in.ppm", "in.pgm"
+
+Example of running this project
+
+```sh
+cp ~/the/path/of/a/image.ppm in.ppm
+./5kk70-assignment-gpu
+```
+This project only accepts `ppm` or `pgm` file, and input name must be `in.ppm` or `in.pgm`.
